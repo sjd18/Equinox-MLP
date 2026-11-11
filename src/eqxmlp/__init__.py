@@ -21,6 +21,7 @@ from .systems import (
     remove_rotation,
     smooth_cutoff,
 )
+from .timelapse import render_timelapse, snapshot_steps
 from .training import evaluate, loss_fn, train
 
 __version__ = "0.1.0"
@@ -54,4 +55,6 @@ __all__ = [
     "total_momentum",
     "angular_momentum",
     "radial_distribution",
+    "snapshot_steps",
+    "render_timelapse",
 ]

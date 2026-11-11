@@ -17,7 +17,7 @@ V_\theta(q) = \sum_{i \lt j} \varphi_\theta(r_{ij}) \qquad F_\theta = -\nabla_q 
 
 <p align="center"><img src="assets/training_timelapse.gif" width="100%" alt="Animation: as training proceeds, the simulated cluster goes from atoms flying apart to a stable cluster matching the true-force simulation, while the learned pair potential converges onto the Lennard-Jones curve"></p>
 
-> Each frame is a snapshot of the model during training. **Left:** the 16-atom cluster simulated for 10 time units from the same start with that snapshot's learned forces; hollow rings show where the true forces put the atoms. **Middle:** the learned pair potential. **Right:** the loss so far. Untrained, the forces barely hold anything and atoms drift away. Around step 100 the loss collapses, the potential snaps onto the true curve, and from then on the learned cluster tracks the true one. Made by `examples/training_timelapse.py`.
+> Each frame is a snapshot of the model during training. **Left:** the 16-atom cluster simulated for 10 time units from the same start with that snapshot's learned forces; hollow rings show where the true forces put the atoms. **Middle:** the learned pair potential. **Right:** the loss so far. Untrained, the forces barely hold anything and atoms drift away. Around step 100 the loss collapses, the potential snaps onto the true curve, and from then on the learned cluster tracks the true one. Made by `examples/training_timelapse.py`, or from your own training run in the notebook (section 4b) with `em.render_timelapse`.
 
 <p align="center"><img src="assets/learned_potential.png" width="100%" alt="Learned pair potential overlaid on the true Lennard-Jones curve, a force parity plot, and the training loss"></p>
 
@@ -166,7 +166,7 @@ The same initial condition (not in the training data), run for 100,000 steps (t 
 
 ```bash
 pip install -e ".[dev]"
-pytest -q        # 20 tests, ~25 s on CPU
+pytest -q        # 21 tests, ~35 s on CPU
 ```
 
 The tests check physics properties, not just shapes:
@@ -178,7 +178,7 @@ The tests check physics properties, not just shapes:
 - The pair model's energy is invariant to translation, rotation and permutation. Its forces rotate with the system, sum to zero and exert no net torque, **even untrained**.
 - The global baseline breaks translation symmetry, as it should.
 - The force-matching gradient (grad of grad) is finite and non-zero.
-- A short training run recovers the LJ curve, and the training callback sees every step.
+- A short training run recovers the LJ curve; the training callback sees every step; the timelapse renders a valid GIF.
 
 ## Repository layout
 
@@ -190,8 +190,9 @@ src/eqxmlp/
   data.py          vmapped MD data generation (positions, energies, forces)
   training.py      force-matching loss, Optax training loop, evaluation
   diagnostics.py   energy, momentum, angular momentum, pair-distance distribution
+  timelapse.py     snapshot schedule + GIF of the cluster as the MLP learns
 examples/          scripts that produce every figure in this README
-notebooks/         quickstart.ipynb: guided tour with plots
+notebooks/         quickstart.ipynb: guided tour with plots and a training timelapse
 checkpoints/       trained pair potential (Equinox serialised) + hyperparameters
 tests/             pytest suite (float64)
 assets/            generated figures

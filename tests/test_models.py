@@ -98,3 +98,28 @@ def test_train_callback_sees_every_step():
     )
     assert [n for n, _ in seen] == list(range(6))
     assert seen[0][1] is model and seen[-1][1] is trained
+
+
+def test_render_timelapse_writes_gif(tmp_path):
+    pytest.importorskip("matplotlib")
+    import matplotlib
+
+    matplotlib.use("Agg")
+    data = em.generate_dataset(jax.random.PRNGKey(13), n_traj=2, n_steps=400, save_every=40, burn_in=0)
+    keep = em.snapshot_steps(4, n=3)
+    snaps = []
+    model = em.PairPotentialMLP(width=8, depth=1, key=jax.random.PRNGKey(14))
+    _, losses = em.train(
+        model,
+        data,
+        key=jax.random.PRNGKey(15),
+        steps=4,
+        batch_size=8,
+        verbose=False,
+        callback=lambda n, m: snaps.append((n, m)) if n in keep else None,
+    )
+    start = em.initial_state(jax.random.PRNGKey(16), n_side=3)
+    out = em.render_timelapse(
+        snaps, losses, test_data=data, start=start, path=tmp_path / "t.gif", sim_steps=20, dpi=30
+    )
+    assert out.exists() and out.read_bytes()[:6] in (b"GIF87a", b"GIF89a")
