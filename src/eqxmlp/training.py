@@ -65,8 +65,14 @@ def train(
     force_weight: float = 1.0,
     log_every: int = 500,
     verbose: bool = True,
+    callback=None,
 ):
-    """Adam with cosine decay over random minibatches. Returns ``(model, losses)``."""
+    """Adam with cosine decay over random minibatches. Returns ``(model, losses)``.
+
+    If given, ``callback(n, model)`` is called with the model after ``n``
+    optimisation steps, for ``n = 0`` (untrained) through ``steps``. Use it to
+    record snapshots, e.g. for ``examples/training_timelapse.py``.
+    """
     schedule = optax.cosine_decay_schedule(lr, steps, alpha=0.01)
     opt = optax.adam(schedule)
     opt_state = opt.init(eqx.filter(model, eqx.is_inexact_array))
@@ -79,11 +85,15 @@ def train(
         return eqx.apply_updates(model, updates), opt_state, loss
 
     losses = []
+    if callback is not None:
+        callback(0, model)
     for i in range(steps):
         key, sub = jax.random.split(key)
         idx = jax.random.choice(sub, len(data), (batch_size,), replace=False)
         model, opt_state, loss = step(model, opt_state, idx)
         losses.append(float(loss))
+        if callback is not None:
+            callback(i + 1, model)
         if verbose and (i % log_every == 0 or i == steps - 1):
             print(f"  step {i:5d}  loss {float(loss):.3e}")
     return model, jnp.array(losses)

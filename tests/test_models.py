@@ -81,3 +81,20 @@ def test_direct_force_model_shape():
     q = em.hexagonal_cluster(3)
     assert m.forces(q).shape == q.shape
     assert not hasattr(m, "energy")
+
+
+def test_train_callback_sees_every_step():
+    data = em.generate_dataset(jax.random.PRNGKey(10), n_traj=2, n_steps=400, save_every=40, burn_in=0)
+    seen = []
+    model = em.PairPotentialMLP(width=8, depth=1, key=jax.random.PRNGKey(11))
+    trained, _ = em.train(
+        model,
+        data,
+        key=jax.random.PRNGKey(12),
+        steps=5,
+        batch_size=8,
+        verbose=False,
+        callback=lambda n, m: seen.append((n, m)),
+    )
+    assert [n for n, _ in seen] == list(range(6))
+    assert seen[0][1] is model and seen[-1][1] is trained

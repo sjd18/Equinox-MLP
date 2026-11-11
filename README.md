@@ -13,6 +13,12 @@ V_\theta(q) = \sum_{i \lt j} \varphi_\theta(r_{ij}) \qquad F_\theta = -\nabla_q 
 - **Symmetry by architecture.** The MLP sees only pair distances, so energy is invariant to translation, rotation and relabelling atoms. Momentum and angular momentum are then conserved to round-off.
 - **One integrator for every force field.** `simulate(force_fn, ...)` doesn't care whether forces come from the true potential, a learned one, or a network that predicts forces directly. That makes the comparisons fair.
 
+### Watch it learn
+
+<p align="center"><img src="assets/training_timelapse.gif" width="100%" alt="Animation: as training proceeds, the simulated cluster goes from atoms flying apart to a stable cluster matching the true-force simulation, while the learned pair potential converges onto the Lennard-Jones curve"></p>
+
+> Each frame is a snapshot of the model during training. **Left:** the 16-atom cluster simulated for 10 time units from the same start with that snapshot's learned forces; hollow rings show where the true forces put the atoms. **Middle:** the learned pair potential. **Right:** the loss so far. Untrained, the forces barely hold anything and atoms drift away. Around step 100 the loss collapses, the potential snaps onto the true curve, and from then on the learned cluster tracks the true one. Made by `examples/training_timelapse.py`.
+
 <p align="center"><img src="assets/learned_potential.png" width="100%" alt="Learned pair potential overlaid on the true Lennard-Jones curve, a force parity plot, and the training loss"></p>
 
 > A 2,545-parameter MLP recovers the Lennard-Jones pair potential from energies and forces alone. On **held-out trajectories** its autodiff forces reach **R² = 0.99998** (RMSE 0.019, against a typical force size of 4.5). Trained in 71 s on a CPU.
@@ -72,6 +78,7 @@ Reproduce every figure:
 python examples/train_pair_potential.py   # train, evaluate, save checkpoints/pair_potential.eqx
 python examples/simulate_learned.py       # MD with learned vs true forces
 python examples/baselines.py              # compare with unstructured MLPs
+python examples/training_timelapse.py     # the GIF above (retrains with snapshots, ~2 min)
 ```
 
 A trained checkpoint is included in `checkpoints/`, so the last two scripts run without retraining.
@@ -159,7 +166,7 @@ The same initial condition (not in the training data), run for 100,000 steps (t 
 
 ```bash
 pip install -e ".[dev]"
-pytest -q        # 19 tests, ~25 s on CPU
+pytest -q        # 20 tests, ~25 s on CPU
 ```
 
 The tests check physics properties, not just shapes:
@@ -171,7 +178,7 @@ The tests check physics properties, not just shapes:
 - The pair model's energy is invariant to translation, rotation and permutation. Its forces rotate with the system, sum to zero and exert no net torque, **even untrained**.
 - The global baseline breaks translation symmetry, as it should.
 - The force-matching gradient (grad of grad) is finite and non-zero.
-- A short training run recovers the LJ curve.
+- A short training run recovers the LJ curve, and the training callback sees every step.
 
 ## Repository layout
 
